@@ -54,7 +54,7 @@ def get_wikipedia_pages(categories):
     """Retrieve Wikipedia pages from a list of categories and extract their content"""
 
     # Create a Wikipedia object
-    wiki_wiki = wikipediaapi.Wikipedia("Kaggle Data Science Assistant with Gemma", "en")
+    wiki_wiki = wikipediaapi.Wikipedia("Gemma AI Assistant (gemma@example.com)", "en")
 
     # Initialize lists to store explored categories and Wikipedia pages
     explored_categories = []
@@ -109,22 +109,28 @@ def get_wikipedia_pages(categories):
     # Iterate through each Wikipedia page
     print("- Processing Wikipedia pages:")
     for page_title in tqdm(wikipedia_pages):
-        # Get the Wikipedia page
-        page = wiki_wiki.page(page_title)
+        try:
+            # Make a request to the Wikipedia page
+            page = wiki_wiki.page(page_title)
 
-        # Check if the page summary does not contain certain keywords
-        if "Biden" not in page.summary and "Trump" not in page.summary:
-            # Append the page title and summary to the extracted texts list
-            if len(page.summary) > len(page.title):
-                extracted_texts.append(page.title + " : " + clean_string(page.summary))
-
-            # Iterate through the sections in the page
-            for section in page.sections:
-                # Append the page title and section text to the extracted texts list
-                if len(section.text) > len(page.title):
+            # Check if the page summary does not contain certain keywords
+            if "Biden" not in page.summary and "Trump" not in page.summary:
+                # Append the page title and summary to the extracted texts list
+                if len(page.summary) > len(page.title):
                     extracted_texts.append(
-                        page.title + " : " + clean_string(section.text)
+                        page.title + " : " + clean_string(page.summary)
                     )
+
+                # Iterate through the sections in the page
+                for section in page.sections:
+                    # Append the page title and section text to the extracted texts list
+                    if len(section.text) > len(page.title):
+                        extracted_texts.append(
+                            page.title + " : " + clean_string(section.text)
+                        )
+
+        except Exception as e:
+            print(f"Error processing page {page.title}: {e}")
 
     # Return the extracted texts
     return extracted_texts
@@ -147,7 +153,7 @@ wikipedia_data_science_kb.head()
 
 # Initialize the name of the embeddings and model
 embeddings_name = "thenlper/gte-large"
-model_name = "google/gemma-2b-it"
+model_name = "/kaggle/input/gemma/transformers/2b-it/1"
 
 # Create an instance of AIAssistant with specified parameters
 gemma_ai_assistant = AIAssistant(
@@ -164,4 +170,24 @@ gemma_ai_assistant.save_embeddings()
 gemma_ai_assistant.set_temperature(0.0)
 gemma_ai_assistant.set_role(
     "data science expert whose explanations are useful, clear and complete"
+)
+
+gemma_ai_assistant.query(
+    "What is the difference between data science, machine learning, and artificial intelligence?"
+)
+
+gemma_ai_assistant.query("Explain how linear regression works")
+
+
+gemma_ai_assistant.query(
+    "What are decision trees, and how do they work in machine learning?"
+)
+
+
+gemma_ai_assistant.query(
+    "What is cross-validation, and why is it used in machine learning?"
+)
+
+gemma_ai_assistant.query(
+    "Explain the concept of regularization and its importance in preventing overfitting in machine learning models"
 )

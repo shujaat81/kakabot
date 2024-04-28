@@ -50,7 +50,9 @@ def map2embeddings(data, embedding_model):
     embeddings = []
 
     # Iterate over each text in the input data list
-    for i in tqdm(range(len(data))):
+    no_texts = len(data)
+    print(f"Mapping {no_texts} pieces of information")
+    for i in tqdm(range(no_texts)):
         # Get embeddings for the current text using the provided embedding model
         embeddings.append(get_embedding(data[i], embedding_model))
 
@@ -85,36 +87,6 @@ def add_indefinite_article(role_name):
     return role_name
 
 
-def initialize_model(model_name, device, max_seq_length):
-    """Initialize a 4-bit quantized causal language model (LLM) and tokenizer with specified settings"""
-
-    # Define the data type for computation
-    compute_dtype = getattr(torch, "float16")
-
-    # Define the configuration for quantization
-    bnb_config = BitsAndBytesConfig(
-        load_in_4bit=True,
-        bnb_4bit_use_double_quant=True,
-        bnb_4bit_quant_type="nf4",
-        bnb_4bit_compute_dtype=compute_dtype,
-    )
-
-    # Load the pre-trained model with quantization configuration
-    model = AutoModelForCausalLM.from_pretrained(
-        model_name,
-        device_map=device,
-        quantization_config=bnb_config,
-    )
-
-    # Load the tokenizer with specified device and max_seq_length
-    tokenizer = AutoTokenizer.from_pretrained(
-        model_name, device_map=device, max_seq_length=max_seq_length
-    )
-
-    # Return the initialized model and tokenizer
-    return model, tokenizer
-
-
 class GemmaHF:
     """Wrapper for the Transformers implementation of Gemma"""
 
@@ -125,9 +97,38 @@ class GemmaHF:
         # Initialize the model and tokenizer
         print("\nInitializing model:")
         self.device = define_device()
-        self.model, self.tokenizer = initialize_model(
+        self.model, self.tokenizer = self.initialize_model(
             self.model_name, self.device, self.max_seq_length
         )
+
+    def initialize_model(self, model_name, device, max_seq_length):
+        """Initialize a 4-bit quantized causal language model (LLM) and tokenizer with specified settings"""
+
+        # Define the data type for computation
+        compute_dtype = getattr(torch, "float16")
+
+        # Define the configuration for quantization
+        bnb_config = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_use_double_quant=True,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_compute_dtype=compute_dtype,
+        )
+
+        # Load the pre-trained model with quantization configuration
+        model = AutoModelForCausalLM.from_pretrained(
+            model_name,
+            device_map=device,
+            quantization_config=bnb_config,
+        )
+
+        # Load the tokenizer with specified device and max_seq_length
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_name, device_map=device, max_seq_length=max_seq_length
+        )
+
+        # Return the initialized model and tokenizer
+        return model, tokenizer
 
     def generate_text(self, prompt, max_new_tokens=2048, temperature=0.0):
         """Generate text using the instantiated tokenizer and model with specified settings"""
@@ -177,7 +178,10 @@ def generate_summary_and_answer(
     context = " ".join([data[pos] for pos in np.ravel(neighbors)])
 
     # Get the end-of-sentence token from the tokenizer
-    EOS_TOKEN = model.tokenizer.eos_token
+    try:
+        EOS_TOKEN = model.tokenizer.eos_token
+    except:
+        EOS_TOKEN = "<eos>"
 
     # Add a determinative adjective to the role
     role = add_indefinite_article(role)

@@ -4,8 +4,6 @@ from sentence_transformers import SentenceTransformer
 
 from agent.utils import (
     map2embeddings,
-    define_device,
-    initialize_model,
     generate_summary_and_answer,
 )
 
@@ -13,7 +11,13 @@ from agent.utils import (
 class AIAssistant:
     """An AI assistant that interacts with users by providing answers based on a provided knowledge base"""
 
-    def __init__(self, gemma_model, embeddings_name, temperature=0.4, role="expert"):
+    def __init__(
+        self,
+        gemma_model,
+        embeddings_name="thenlper/gte-large",
+        temperature=0.4,
+        role="expert",
+    ):
         """Initialize the AI assistant."""
         # Initialize attributes
         self.embeddings_name = embeddings_name
@@ -27,10 +31,14 @@ class AIAssistant:
         # Load the embedding model
         self.embedding_model = SentenceTransformer(self.embeddings_name)
 
+    def store_knowledge_base(self, knowledge_base):
+        """Store the knowledge base"""
+        self.knowledge_base = knowledge_base
+
     def learn_knowledge_base(self, knowledge_base):
         """Store and index the knowledge based to be used by the assistant"""
         # Storing the knowledge base
-        self.knowledge_base = knowledge_base
+        self.store_knowledge_base(knowledge_base)
 
         # Load and index the knowledge base
         print("Indexing and mapping the knowledge base:")
