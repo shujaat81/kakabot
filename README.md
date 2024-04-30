@@ -1,2 +1,3 @@
 # kakabot
-# just a test
+# your only agent is here :)
+# currently in building phase
