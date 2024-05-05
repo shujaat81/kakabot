@@ -226,3 +226,8 @@ def generate_summary_and_answer(
 
     # Return the cleaned answer
     return answer
+
+
+def save_embeddings_to_disk(embeddings, filename="/knowledge_base/embeddings.npy"):
+    """Save the embeddings to disk"""
+    np.save(filename, embeddings)

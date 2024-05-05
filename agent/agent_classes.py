@@ -20,6 +20,8 @@ class AIAssistant:
     ):
         """Initialize the AI assistant."""
         # Initialize attributes
+        self.searcher = None
+        self.embeddings = None
         self.embeddings_name = embeddings_name
         self.knowledge_base = []
         self.temperature = temperature
