@@ -1,3 +1,5 @@
+import os
+
 import torch
 from transformers import (
     AutoModelForCausalLM,
@@ -5,7 +7,11 @@ from transformers import (
     BitsAndBytesConfig,
 )
 from tqdm import tqdm
+from dotenv import load_dotenv, find_dotenv
+from pathlib import Path
 import numpy as np
+
+load_dotenv(Path(".env"))
 
 
 def define_device():
@@ -87,11 +93,12 @@ def add_indefinite_article(role_name):
     return role_name
 
 
-class GemmaHF:
+class LLMHF:
     """Wrapper for the Transformers implementation of Gemma"""
 
-    def __init__(self, model_name, max_seq_length=2048):
+    def __init__(self, model_name, tokenizer_name, max_seq_length=2048):
         self.model_name = model_name
+        self.tokenizer_name = tokenizer_name
         self.max_seq_length = max_seq_length
 
         # Initialize the model and tokenizer
@@ -107,6 +114,8 @@ class GemmaHF:
         # Define the data type for computation
         compute_dtype = getattr(torch, "float16")
 
+        hf_access_token = os.getenv('HF_TOKEN')
+
         # Define the configuration for quantization
         bnb_config = BitsAndBytesConfig(
             load_in_4bit=True,
@@ -117,14 +126,19 @@ class GemmaHF:
 
         # Load the pre-trained model with quantization configuration
         model = AutoModelForCausalLM.from_pretrained(
-            model_name,
+            self.model_name,
+            token=hf_access_token,
+            trust_remote_code=True,
             device_map=device,
-            quantization_config=bnb_config,
         )
 
         # Load the tokenizer with specified device and max_seq_length
         tokenizer = AutoTokenizer.from_pretrained(
-            model_name, device_map=device, max_seq_length=max_seq_length
+            self.tokenizer_name,
+            token=hf_access_token,
+            device_map=device,
+            trust_remote_code=True,
+            max_seq_length=max_seq_length
         )
 
         # Return the initialized model and tokenizer
@@ -134,37 +148,53 @@ class GemmaHF:
         """Generate text using the instantiated tokenizer and model with specified settings"""
 
         # Encode the prompt and convert to PyTorch tensor
-        input_ids = self.tokenizer(prompt, return_tensors="pt", padding=True).to(
-            self.device
-        )
+        try:
+            input_ids = self.tokenizer(prompt, return_tensors="pt", padding=True).to(
+                self.device
+            )
 
-        # Determine if sampling should be performed based on temperature
-        do_sample = True if temperature > 0 else False
+            # Determine if sampling should be performed based on temperature
+            do_sample = True if temperature > 0 else False
 
-        # Generate text based on the input prompt
-        outputs = self.model.generate(
-            **input_ids,
-            max_new_tokens=max_new_tokens,
-            do_sample=do_sample,
-            temperature=temperature,
-        )
+            # Generate text based on the input prompt
+            outputs = self.model.generate(
+                **input_ids,
+                max_new_tokens=max_new_tokens,
+                do_sample=do_sample,
+                temperature=temperature,
+            )
 
+            # Decode the generated output into text
+            results = [self.tokenizer.decode(output) for output in outputs]
+        except ValueError as v:
+            print(f"Error during encoding the prompt:\n{v}")
+            # Prepare the prompt
+            tokenized_prompt = self.tokenizer(prompt)
+            tokenized_prompt = torch.tensor(
+                tokenized_prompt['input_ids'],
+                device=self.device
+            )
+
+            tokenized_prompt = tokenized_prompt.unsqueeze(0)
+            outputs = self.model.generate(
+                tokenized_prompt,
+                pad_token_id=0,
+            )
         # Decode the generated output into text
         results = [self.tokenizer.decode(output) for output in outputs]
-
         # Return the list of generated text results
         return results
 
 
 def generate_summary_and_answer(
-    question,
-    data,
-    searcher,
-    embedding_model,
-    model,
-    max_new_tokens=2048,
-    temperature=0.4,
-    role="expert",
+        question,
+        data,
+        searcher,
+        embedding_model,
+        model,
+        max_new_tokens=2048,
+        temperature=0.4,
+        role="expert",
 ):
     """Generate an answer for a given question using context from a dataset"""
 
@@ -188,11 +218,11 @@ def generate_summary_and_answer(
 
     # Generate a prompt for summarizing the context
     prompt = (
-        f"""
+            f"""
              Summarize this context: "{context}" in order to answer the question "{question}" as {role}\
              SUMMARY:
              """.strip()
-        + EOS_TOKEN
+            + EOS_TOKEN
     )
 
     # Generate a summary based on the prompt
@@ -203,7 +233,7 @@ def generate_summary_and_answer(
 
     # Generate a prompt for providing an answer
     prompt = (
-        f"""
+            f"""
              Here is the context: {summary}
              Using the relevant information from the context 
              and integrating it with your knowledge,
@@ -215,7 +245,7 @@ def generate_summary_and_answer(
              hence I answer based on my own knowledge] \
              ANSWER:
              """.strip()
-        + EOS_TOKEN
+            + EOS_TOKEN
     )
 
     # Generate an answer based on the prompt

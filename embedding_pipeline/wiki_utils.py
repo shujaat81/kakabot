@@ -79,6 +79,9 @@ def get_wikipedia_pages(categories):
         set([item for item in wikipedia_pages if "Category:" not in item])
     )
 
+    # FIXME: just for development purposes limiting the number of categories to explore to 4
+    categories_to_explore = categories_to_explore[:1]
+
     # Explore subcategories recursively
     while categories_to_explore:
         category_name = categories_to_explore.pop()
