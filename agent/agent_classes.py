@@ -2,9 +2,7 @@ import numpy as np
 import scann
 from sentence_transformers import SentenceTransformer
 
-from agent.utils import (
-    map2embeddings,
-)
+from embedding_pipeline.utils import map2embeddings
 from utils import generate_summary_and_answer
 
 
