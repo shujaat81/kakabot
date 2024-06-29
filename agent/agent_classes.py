@@ -4,8 +4,8 @@ from sentence_transformers import SentenceTransformer
 
 from agent.utils import (
     map2embeddings,
-    generate_summary_and_answer,
 )
+from utils import generate_summary_and_answer
 
 
 class AIAssistant:

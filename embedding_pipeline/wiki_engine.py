@@ -1,34 +1,38 @@
 import pandas as pd
-
-from agent.agent_classes import AIAssistant
-from agent.utils import LLMHF
 from embedding_pipeline.wiki_utils import get_wikipedia_pages
 
-df = pd.read_csv('/home/shujaat_tracebloc/open_source/kakabot/wikipedia_data_science_kb.csv')
 
-# categories = [
-#     "Machine_learning",
-# ]
-# extracted_texts = get_wikipedia_pages(categories)
-# print("Found", len(extracted_texts), "Wikipedia pages")
-#
-# wikipedia_data_science_kb = pd.DataFrame(extracted_texts, columns=["wikipedia_text"])
-# wikipedia_data_science_kb.to_csv("wikipedia_data_science_kb.csv", index=False)
-# wikipedia_data_science_kb.head()
+categories = [
+    "Machine_learning",
+]
+extracted_texts = get_wikipedia_pages(categories)
+print("Found", len(extracted_texts), "Wikipedia pages")
 
-extracted_texts = df['wikipedia_text'].values
-# Initialize the name of the embeddings and model
+wikipedia_data_science_kb = pd.DataFrame(extracted_texts, columns=["wikipedia_text"])
+wikipedia_data_science_kb.to_csv("wikipedia_data_science_kb.csv", index=False)
+wikipedia_data_science_kb.head()
+
+# Initialize the name of the embeddings
 embeddings_name = "thenlper/gte-large"
+
+
+df = pd.read_csv(
+    "/home/shujaat_tracebloc/open_source/kakabot/wikipedia_data_science_kb.csv"
+)
+extracted_texts = df["wikipedia_text"].values
+
 model_name = "apple/OpenELM-270M-Instruct"
 tokenizer_name = "meta-llama/Llama-2-7b-hf"
 
 # Create an instance of AIAssistant with specified parameters
 gemma_ai_assistant = AIAssistant(
-    gemma_model=LLMHF(model_name,tokenizer_name), embeddings_name=embeddings_name
+    gemma_model=LLMHF(model_name, tokenizer_name), embeddings_name=embeddings_name
 )
 
 # load embeddings
-gemma_ai_assistant.load_embeddings(filename="/home/shujaat_tracebloc/open_source/kakabot/embeddings.npy")
+gemma_ai_assistant.load_embeddings(
+    filename="/home/shujaat_tracebloc/open_source/kakabot/embeddings.npy"
+)
 gemma_ai_assistant.store_knowledge_base(knowledge_base=extracted_texts)
 # Map the intended knowledge base to embeddings and index it
 # gemma_ai_assistant.learn_knowledge_base(knowledge_base=extracted_texts)
