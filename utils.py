@@ -3,7 +3,7 @@ import re
 import numpy as np
 import torch
 
-from agent.utils import add_indefinite_article
+from agent_classes.utils import add_indefinite_article
 from embedding_pipeline.utils import get_embedding
 
 BRACES_PATTERN = re.compile(r"\{.*?\}|\}")
